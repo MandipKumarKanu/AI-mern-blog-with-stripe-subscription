@@ -92,7 +92,7 @@ const BlogsPage = () => {
   };
 
   const handleCreatePost = () => {
-    navigate("/create");
+    navigate("/add");
   };
 
   useEffect(() => {

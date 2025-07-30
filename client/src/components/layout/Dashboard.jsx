@@ -11,6 +11,7 @@ import TagsPage from "@/pages/tag";
 import BlogsPage from "@/pages/blogs";
 import AdminTransactionsPage from "@/pages/AdminTransactionsPage";
 import AdManagementPage from "@/pages/AdManagementPage";
+import AdminContactPage from "@/pages/AdminContactPage";
 
 const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -33,6 +34,8 @@ const Dashboard = () => {
         return <AdminTransactionsPage />;
       case "ads":
         return <AdManagementPage />;
+      case "contacts":
+        return <AdminContactPage />;
       case "settings":
         return <SettingsPage />;
       default:

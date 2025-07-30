@@ -10,8 +10,8 @@ const PopupAd = ({ isOpen, onClose, blogId }) => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuthStore();
 
-  // Don't show popup ads to premium or pro users
-  if (user?.subscription?.plan && ['premium', 'pro'].includes(user.subscription.plan.toLowerCase())) {
+  // Don't show popup ads to premium/pro users or admin users
+  if (user?.role === 'admin' || (user?.subscription?.plan && ['premium', 'pro'].includes(user.subscription.plan.toLowerCase()))) {
     return null;
   }
 

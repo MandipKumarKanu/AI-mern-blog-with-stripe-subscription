@@ -240,15 +240,16 @@ const summarizeBlog = async (req, res) => {
     const isActiveSubscription = user.subscription?.status === 'active' && 
                                 user.subscription?.endDate > currentDate;
 
-    // Define limits based on subscription
+    // Define limits based on subscription and role
     const limits = {
       free: 5,
       premium: Infinity,
       pro: Infinity
     };
 
-    const currentPlan = isActiveSubscription ? subscriptionPlan : 'free';
-    const monthlyLimit = limits[currentPlan];
+    // Admin users get unlimited access regardless of subscription plan
+    const currentPlan = user.role === 'admin' ? 'admin' : (isActiveSubscription ? subscriptionPlan : 'free');
+    const monthlyLimit = user.role === 'admin' ? Infinity : limits[currentPlan];
 
     // Check if user has exceeded limit
     if (user.aiUsage.summaryCount >= monthlyLimit) {

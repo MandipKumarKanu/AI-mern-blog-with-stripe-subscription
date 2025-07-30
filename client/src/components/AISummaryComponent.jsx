@@ -43,8 +43,8 @@ const AISummaryComponent = ({ blogId }) => {
       return;
     }
 
-    // Check if user has remaining usage
-    if (subscriptionData?.aiUsage?.remaining === 0) {
+    // Check if user has remaining usage (skip check for admin users)
+    if (user.role !== 'admin' && subscriptionData?.aiUsage?.remaining === 0) {
       setShowUpgradeDialog(true);
       return;
     }
@@ -187,10 +187,11 @@ const AISummaryComponent = ({ blogId }) => {
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-foreground">AI Usage This Month</span>
             <Badge variant={subscriptionData.subscription.plan === 'free' ? 'secondary' : 'default'}>
-              {subscriptionData.subscription.plan.toUpperCase()}
+              {user.role === 'admin' ? 'ADMIN' : subscriptionData.subscription.plan.toUpperCase()}
             </Badge>
           </div>
-          {subscriptionData.subscription.plan === 'free' && (
+          {/* Show usage info only for free plan users (not admin, premium, or pro) */}
+          {subscriptionData.subscription.plan === 'free' && user.role !== 'admin' && (
             <div className="space-y-2">
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>{subscriptionData.aiUsage.used} / {subscriptionData.aiUsage.limit} used</span>
@@ -202,6 +203,12 @@ const AISummaryComponent = ({ blogId }) => {
               />
             </div>
           )}
+          {/* Show unlimited access message for admin, premium, and pro users */}
+          {(user.role === 'admin' || ['premium', 'pro'].includes(subscriptionData.subscription.plan)) && (
+            <div className="text-xs text-muted-foreground text-center">
+              <span className="font-medium text-primary">Unlimited AI Summaries</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -210,7 +217,7 @@ const AISummaryComponent = ({ blogId }) => {
         onClick={handleSummaryClick}
         className="w-full group hover:bg-primary/90 transition-colors"
         variant="outline"
-        disabled={user && subscriptionData?.aiUsage?.remaining === 0}
+        disabled={user && user.role !== 'admin' && subscriptionData?.aiUsage?.remaining === 0}
       >
         <Sparkles className="mr-2 h-4 w-4 text-primary" />
         {!user ? 'Login to Generate AI Summary' : 'Generate AI Summary'}

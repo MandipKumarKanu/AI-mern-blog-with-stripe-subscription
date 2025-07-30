@@ -138,11 +138,14 @@ const update = async (req, res) => {
     }
 
     const updatedData = {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      profileImage: user.profileImage,
       userName: user.userName,
+      _id: user._id,
+      email: user.email,
+      name: user.name,
+      profileImage: user.profileImage,
+      role: user.role,
+      interests: user.interests,
+      subscription: user.subscription,
     };
 
     res.status(201).json(updatedData);
@@ -165,47 +168,57 @@ const refresh = async (req, res) => {
     const user = await User.findOne({ refreshToken });
     if (!user) return res.status(403).json({ message: "Forbidden" });
 
-    jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, async (err, decoded) => {
-      if (err) {
-        if (err.name === "TokenExpiredError") {
-          return res.status(403).json({ message: "Refresh token expired. Please log in again." });
+    jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET,
+      async (err, decoded) => {
+        if (err) {
+          if (err.name === "TokenExpiredError") {
+            return res
+              .status(403)
+              .json({ message: "Refresh token expired. Please log in again." });
+          }
+          return res.status(403).json({ message: "Invalid refresh token" });
         }
-        return res.status(403).json({ message: "Invalid refresh token" });
+
+        const payload = {
+          user: {
+            userName: user.userName,
+            id: user._id,
+            email: user.email,
+            name: user.name,
+            profileImage: user.profileImage,
+            role: user.role,
+            interests: user.interests,
+            subscription: user.subscription,
+          },
+        };
+
+        const newAccessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+          expiresIn: "15m",
+        });
+
+        const newRefreshToken = jwt.sign(
+          payload,
+          process.env.JWT_REFRESH_SECRET,
+          {
+            expiresIn: "7d",
+          }
+        );
+
+        user.refreshToken = newRefreshToken;
+        await user.save();
+
+        res.cookie("refreshToken", newRefreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+          sameSite: process.env.NODE_ENV === "production" ? "None" : "lax",
+        });
+
+        res.json({ accessToken: newAccessToken });
       }
-
-      const payload = {
-        user: {
-          userName: user.userName,
-          id: user._id,
-          email: user.email,
-          name: user.name,
-          profileImage: user.profileImage,
-          role: user.role,
-          interests: user.interests,
-          subscription: user.subscription,
-        },
-      };
-
-      const newAccessToken = jwt.sign(payload, process.env.JWT_SECRET, {
-        expiresIn: "15m",
-      });
-
-      const newRefreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
-        expiresIn: "7d",
-      });
-
-      user.refreshToken = newRefreshToken;
-      await user.save();
-
-      res.cookie("refreshToken", newRefreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-        sameSite: process.env.NODE_ENV === "production" ? "None" : "lax",
-      });
-
-      res.json({ accessToken: newAccessToken });
-    });
+    );
   } catch (error) {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
@@ -215,7 +228,9 @@ const getUserById = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const user = await User.findById(id).select("userName email _id name profileImage");
+    const user = await User.findById(id).select(
+      "userName email _id name profileImage"
+    );
     if (!user) return res.status(404).json({ message: "User not found" });
 
     res.status(200).json({ user });

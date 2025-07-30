@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { customAxios } from "@/components/config/axios";
+import { toast } from "sonner";
 
 const signupSchema = z
   .object({
@@ -92,6 +93,7 @@ const UsersPage = () => {
       setUsers(response.data.users);
       setTotalPages(response.data.totalPages);
     } catch (error) {
+      toast.error(error.response.data.message);
       console.error("Error fetching users:", error);
     } finally {
       setLoading(false);
@@ -110,6 +112,7 @@ const UsersPage = () => {
         )
       );
     } catch (error) {
+      toast.error(error.response.data.message);
       console.error("Error updating user role:", error);
     }
   };
@@ -127,6 +130,7 @@ const UsersPage = () => {
       setIsDialogOpen(false);
     } catch (error) {
       console.error("Error creating user:", error);
+      toast.error(error.response.data.message);
     }
   };
 
@@ -489,6 +493,7 @@ const ResetPasswordForm = ({ userId, onClose }) => {
       alert("Password reset successfully!");
       onClose();
     } catch (error) {
+      toast.error(error.response.data.message);
       console.error("Error resetting password:", error);
       alert("Failed to reset password. Please try again.");
     }

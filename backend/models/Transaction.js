@@ -84,7 +84,6 @@ const transactionSchema = new mongoose.Schema({
 });
 
 transactionSchema.index({ userId: 1, createdAt: -1 });
-transactionSchema.index({ transactionId: 1 });
 transactionSchema.index({ stripeSessionId: 1 });
 transactionSchema.index({ stripeSubscriptionId: 1 });
 transactionSchema.index({ status: 1 });

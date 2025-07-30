@@ -91,7 +91,8 @@ router.get('/subscription', protect, async (req, res) => {
     const isActiveSubscription = user.subscription?.status === 'active' && 
                                 user.subscription?.endDate > currentDate;
 
-    const currentPlan = isActiveSubscription ? subscriptionPlan : 'free';
+    // Admin users get unlimited access regardless of subscription plan
+    const currentPlan = user.role === 'admin' ? 'admin' : (isActiveSubscription ? subscriptionPlan : 'free');
     
     // Define limits
     const limits = {
@@ -100,7 +101,7 @@ router.get('/subscription', protect, async (req, res) => {
       pro: Infinity
     };
 
-    const monthlyLimit = limits[currentPlan];
+    const monthlyLimit = user.role === 'admin' ? Infinity : limits[currentPlan];
 
     res.json({
       success: true,

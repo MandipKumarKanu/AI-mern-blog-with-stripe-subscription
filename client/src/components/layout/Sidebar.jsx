@@ -13,6 +13,7 @@ import {
   MoreVertical,
   CreditCard,
   MonitorSpeaker,
+  MessageSquare,
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useLocation, Link } from "react-router-dom";
@@ -59,6 +60,7 @@ const Sidebar = ({ isOpen, setIsOpen, onNavigate }) => {
     { id: "blogs", label: "Blogs", icon: <FileText className="h-5 w-5" /> },
     { id: "transactions", label: "Transactions", icon: <CreditCard className="h-5 w-5" /> },
     { id: "ads", label: "Ads", icon: <MonitorSpeaker className="h-5 w-5" /> },
+    { id: "contacts", label: "Contacts", icon: <MessageSquare className="h-5 w-5" /> },
   ];
 
   const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;

@@ -7,8 +7,8 @@ import { customAxios } from '@/components/config/axios';
 const AdCard = ({ ad, placement = 'sidebar', className = '' }) => {
   const { user } = useAuthStore();
   
-  // Don't show ads to premium or pro users
-  if (user?.subscription?.plan && ['premium', 'pro'].includes(user.subscription.plan.toLowerCase())) {
+  // Don't show ads to premium/pro users or admin users
+  if (user?.role === 'admin' || (user?.subscription?.plan && ['premium', 'pro'].includes(user.subscription.plan.toLowerCase()))) {
     return null;
   }
 

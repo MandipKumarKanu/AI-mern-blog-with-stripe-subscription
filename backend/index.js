@@ -12,6 +12,7 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const statsRoutes = require("./routes/statsRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const adRoutes = require("./routes/adRoutes");
+const contactRoutes = require("./routes/contactRoutes");
 const startCronJob = require("./cron");
 const http = require("http");
 const cronPublishHandler = require("./api/cron-publish-blogs");
@@ -52,6 +53,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/ads", adRoutes);
+app.use("/api/contact", contactRoutes);
 
 const PORT = process.env.PORT || 5000;
 

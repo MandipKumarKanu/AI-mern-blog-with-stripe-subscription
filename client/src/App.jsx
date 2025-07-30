@@ -49,7 +49,9 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const EditBlog = lazy(() => import("./components/EditBlog"));
 const ProtectedRoute = lazy(() => import("./components/ProtectedRoute"));
 const TransactionsPage = lazy(() => import("./pages/TransactionsPage"));
-const AdminTransactionsPage = lazy(() => import("./pages/AdminTransactionsPage"));
+const AdminTransactionsPage = lazy(() =>
+  import("./pages/AdminTransactionsPage")
+);
 const PaymentSuccessPage = lazy(() => import("./pages/PaymentSuccessPage"));
 const PaymentCancelPage = lazy(() => import("./pages/PaymentCancelPage"));
 
@@ -115,70 +117,70 @@ const App = () => {
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       {/* <ErrorBoundary> */}
-        <TooltipProvider>
-          <Suspense fallback={<Loader />}>
-            {!isAdminRoute && <Header />}
-            <div className="min-h-[100dvh] relative">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/blogs" element={<AllBlog />} />
-                <Route path="/blog/:id" element={<BlogPage />} />
-                <Route path="/category/:category" element={<CategoryPage />} />
-                <Route path="/popular" element={<PopularBlog />} />
-                <Route path="/topics" element={<TopicPage />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/forget" element={<ForgotPassword />} />
-                <Route path="/new" element={<NewBlog />} />
-                <Route path="/faq" element={<FAQPage />} />
-                <Route path="/profile/:id" element={<ProfilePage />} />
-                <Route path="/about" element={<AboutUs />} />
-                <Route path="/contact" element={<ContactPage />} />
-                <Route path="/billing" element={<PricingPage />} />
-                <Route path="/payment/success" element={<PaymentSuccessPage />} />
-                <Route path="/payment/cancel" element={<PaymentCancelPage />} />                
+      <TooltipProvider>
+        <Suspense fallback={<Loader />}>
+          {!isAdminRoute && <Header />}
+          <div className="min-h-[100dvh] relative">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/blogs" element={<AllBlog />} />
+              <Route path="/blog/:id" element={<BlogPage />} />
+              <Route path="/category/:category" element={<CategoryPage />} />
+              <Route path="/popular" element={<PopularBlog />} />
+              <Route path="/topics" element={<TopicPage />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forget" element={<ForgotPassword />} />
+              <Route path="/new" element={<NewBlog />} />
+              <Route path="/faq" element={<FAQPage />} />
+              <Route path="/profile/:id" element={<ProfilePage />} />
+              <Route path="/about" element={<AboutUs />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/billing" element={<PricingPage />} />
+              <Route path="/payment/success" element={<PaymentSuccessPage />} />
+              <Route path="/payment/cancel" element={<PaymentCancelPage />} />
 
-                <Route element={<ProtectedRoute />}>
-                  <Route path="/transactions" element={<TransactionsPage />} />
-                  <Route
-                    path="/admin/*"
-                    element={
-                      user?.role === "admin" ? (
-                        <Dashboard />
-                      ) : (
-                        <Navigate to="/" replace />
-                      )
-                    }
-                  />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/add" element={<Add />} />
-                  <Route path="/allblogs" element={<ApproveBlog />} />
-                  <Route
-                    path="/edit/:blogId"
-                    element={
-                      <Suspense fallback={<div>Loading editor...</div>}>
-                        <EditBlog />
-                      </Suspense>
-                    }
-                  />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <Route element={<ProtectedRoute />}>
+                <Route path="/transactions" element={<TransactionsPage />} />
+                <Route
+                  path="/admin/*"
+                  element={
+                    user?.role === "admin" ? (
+                      <Dashboard />
+                    ) : (
+                      <Navigate to="/" replace />
+                    )
+                  }
+                />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/add" element={<Add />} />
+                <Route path="/allblogs" element={<ApproveBlog />} />
+                <Route
+                  path="/edit/:blogId"
+                  element={
+                    <Suspense fallback={<div>Loading editor...</div>}>
+                      <EditBlog />
+                    </Suspense>
+                  }
+                />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
 
-              {canAddBlog && (
-                <button
-                  onClick={() => navigate("/add")}
-                  title="Add Blog"
-                  className="fixed bottom-8 right-8 bg-primary text-white p-4 rounded-full shadow-lg hover:bg-primary-dark transition"
-                >
-                  <Plus className="h-6 w-6" />
-                </button>
-              )}
-            </div>
-            {!isAdminRoute && <Footer />}
-          </Suspense>
-          <Toaster richColors />
-        </TooltipProvider>
+            {canAddBlog && !isAdminRoute && (
+              <button
+                onClick={() => navigate("/add")}
+                title="Add Blog"
+                className="fixed bottom-8 right-8 bg-primary text-white p-4 rounded-full shadow-lg hover:bg-primary-dark transition"
+              >
+                <Plus className="h-6 w-6" />
+              </button>
+            )}
+          </div>
+          {!isAdminRoute && <Footer />}
+        </Suspense>
+        <Toaster richColors />
+      </TooltipProvider>
       {/* </ErrorBoundary> */}
     </ThemeProvider>
   );

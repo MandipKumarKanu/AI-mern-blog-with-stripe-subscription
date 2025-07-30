@@ -7,6 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Send, Sparkles } from "lucide-react";
+import axios from "axios";
+
+const API_URL = "http://localhost:5000/api";
 
 const contactSchema = z.object({
   name: z
@@ -45,13 +48,36 @@ export default function ContactForm() {
 
   const onSubmit = async (data) => {
     setSending(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast.success("Message sent! We'll get back to you soon.", {
-      description: "Thank you for reaching out to the FutureBlog team!",
-      icon: <Sparkles className="h-5 w-5 text-primary" />,
-    });
-    reset();
-    setSending(false);
+    
+    try {
+      const response = await axios.post(`${API_URL}/contact`, data, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.data.success) {
+        toast.success("Message sent! We'll get back to you soon.", {
+          description: "Thank you for reaching out to the FutureBlog team!",
+          icon: <Sparkles className="h-5 w-5 text-primary" />,
+        });
+        reset();
+      } else {
+        throw new Error(response.data.message || 'Failed to send message');
+      }
+    } catch (error) {
+      console.error('Error sending contact form:', error);
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          'Something went wrong. Please try again later.';
+      
+      toast.error("Failed to send message", {
+        description: errorMessage,
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
