@@ -184,7 +184,6 @@ const deleteBlog = async (req, res, next) => {
 
 const summarizeBlog = async (req, res) => {
   try {
-    // Check if user is authenticated
     if (!req.user) {
       return res.status(401).json({ 
         error: "Authentication required", 
@@ -192,7 +191,6 @@ const summarizeBlog = async (req, res) => {
       });
     }
 
-    // Check if Gemini API key is configured
     if (!process.env.GEMINI_API_KEY) {
       return res.status(500).json({
         error: "AI summary service is not configured",
@@ -206,18 +204,15 @@ const summarizeBlog = async (req, res) => {
       return res.status(404).json({ error: "Blog not found" });
     }
 
-    // Get user with subscription details
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Check subscription and usage limits
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
 
-    // Initialize AI usage tracking if not exists
     if (!user.aiUsage) {
       user.aiUsage = {
         month: currentMonth,
@@ -226,7 +221,6 @@ const summarizeBlog = async (req, res) => {
       };
     }
 
-    // Reset counter if new month
     if (user.aiUsage.month !== currentMonth || user.aiUsage.year !== currentYear) {
       user.aiUsage = {
         month: currentMonth,
@@ -235,23 +229,19 @@ const summarizeBlog = async (req, res) => {
       };
     }
 
-    // Check subscription status and limits
     const subscriptionPlan = user.subscription?.plan || 'free';
     const isActiveSubscription = user.subscription?.status === 'active' && 
                                 user.subscription?.endDate > currentDate;
 
-    // Define limits based on subscription and role
     const limits = {
       free: 5,
       premium: Infinity,
       pro: Infinity
     };
 
-    // Admin users get unlimited access regardless of subscription plan
     const currentPlan = user.role === 'admin' ? 'admin' : (isActiveSubscription ? subscriptionPlan : 'free');
     const monthlyLimit = user.role === 'admin' ? Infinity : limits[currentPlan];
 
-    // Check if user has exceeded limit
     if (user.aiUsage.summaryCount >= monthlyLimit) {
       return res.status(403).json({
         error: "Usage limit exceeded",
@@ -301,11 +291,10 @@ const summarizeBlog = async (req, res) => {
     ${blog.content}
     `;
 
-    // Retry logic for API calls
     let response;
     let lastError;
     const maxRetries = 3;
-    const retryDelay = 1000; // 1 second
+    const retryDelay = 1000;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -327,15 +316,14 @@ const summarizeBlog = async (req, res) => {
                 },
               ],
             }),
-            timeout: 30000, // 30 second timeout
+            timeout: 30000,  
           }
         );
 
         if (response.ok) {
-          break; // Success, exit retry loop
+          break; 
         }
 
-        // Handle specific error codes
         if (response.status === 503) {
           lastError = new Error(`Gemini API is temporarily unavailable (503). This usually resolves within a few minutes.`);
         } else if (response.status === 429) {
@@ -346,12 +334,10 @@ const summarizeBlog = async (req, res) => {
           lastError = new Error(`Gemini API error: ${response.status} - ${response.statusText}`);
         }
 
-        // Don't retry on authentication errors
         if (response.status === 401) {
           throw lastError;
         }
 
-        // Wait before retrying (except on last attempt)
         if (attempt < maxRetries) {
           await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
         }
@@ -359,7 +345,6 @@ const summarizeBlog = async (req, res) => {
       } catch (error) {
         lastError = error;
         if (attempt < maxRetries && (error.name === 'TypeError' || error.message.includes('fetch'))) {
-          // Network error, retry
           await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
           continue;
         }
@@ -367,14 +352,12 @@ const summarizeBlog = async (req, res) => {
       }
     }
 
-    // If all retries failed
     if (!response || !response.ok) {
       throw lastError || new Error('Failed to connect to Gemini API after multiple attempts');
     }
 
     const result = await response.json();
 
-    // Increment usage counter after successful API call
     user.aiUsage.summaryCount += 1;
     await user.save();
 
@@ -388,7 +371,6 @@ const summarizeBlog = async (req, res) => {
       }
     });
   } catch (error) {
-    // Provide user-friendly error messages
     let statusCode = 500;
     let errorMessage = error.message;
     
@@ -399,7 +381,7 @@ const summarizeBlog = async (req, res) => {
       statusCode = 429;
       errorMessage = "Too many requests to AI service. Please wait a moment and try again.";
     } else if (error.message.includes('401')) {
-      statusCode = 500; // Don't expose auth issues to users
+      statusCode = 500; 
       errorMessage = "AI summary service is currently unavailable. Please try again later.";
     } else if (error.message.includes('fetch') || error.message.includes('network')) {
       statusCode = 503;
@@ -411,7 +393,7 @@ const summarizeBlog = async (req, res) => {
 
     res.status(statusCode).json({ 
       error: errorMessage,
-      retryable: statusCode !== 500, // Indicate if the user should retry
+      retryable: statusCode !== 500,
       supportMessage: statusCode === 500 ? "If this problem persists, please contact support." : null
     });
   }
@@ -429,8 +411,6 @@ const updateBlog = async (req, res) => {
       return res.status(404).json({ message: "Blog not found" });
     }
 
-    // Check authorization: blog author or admin can update
-    // (Pro users are allowed by middleware but must still own the blog)
     if (blog.author.toString() !== req.user.id && req.user.role !== "admin") {
       return res
         .status(403)
@@ -524,7 +504,7 @@ const searchBlogs = async (req, res, next) => {
     const blogs = await Blog.find({
       tags: { $in: tagsArray },
       status: "published",
-    }) // Add status filter
+    }) 
       .populate("author", "name profileImage subscription")
       .populate("category", "name");
     res.status(200).json({ blogs });
@@ -749,7 +729,6 @@ const getPopularBlog = async (req, res) => {
       },
     ]);
 
-    // Fallback: If no popular blogs in last 3 days, get most viewed published blogs
     if (!blogs || blogs.length === 0) {
       blogs = await Blog.aggregate([
         {
@@ -858,7 +837,6 @@ const getPopularBlogsOfMonth = async (req, res) => {
       },
     ]);
 
-    // If we don't have 3 blogs, get additional blogs from all time
     if (blogs.length < 3) {
       const monthlyBlogIds = blogs.map(blog => blog._id);
       const remainingCount = 3 - blogs.length;
@@ -867,13 +845,13 @@ const getPopularBlogsOfMonth = async (req, res) => {
         {
           $match: { 
             status: "published",
-            _id: { $nin: monthlyBlogIds } // Exclude already selected monthly blogs
+            _id: { $nin: monthlyBlogIds } 
           },
         },
         {
           $sort: { views: -1, publishedAt: -1 },
         },
-        { $limit: remainingCount }, // Get only the remaining count needed
+        { $limit: remainingCount },
         {
           $lookup: {
             from: "categories",
@@ -912,7 +890,6 @@ const getPopularBlogsOfMonth = async (req, res) => {
         },
       ]);
 
-      // Combine monthly blogs with additional blogs
       blogs = [...blogs, ...additionalBlogs];
     }
 

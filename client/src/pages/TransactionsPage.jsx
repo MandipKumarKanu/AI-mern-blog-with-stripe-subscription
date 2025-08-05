@@ -514,7 +514,7 @@ const TransactionsPage = () => {
             <CardContent>
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="font-semibold text-foreground mb-1">
+                  <h4 className="font-semibold text-muted-foreground  mb-1">
                     Cancel Your {subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)} Subscription
                   </h4>
                   <p className="text-sm text-muted-foreground">

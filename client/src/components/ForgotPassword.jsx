@@ -10,26 +10,60 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Mail, Lock } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Mail, Lock, CheckCircle } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { forgotPassword, verifyOTP, resetPassword } from "./api/user";
+import { toast } from "sonner";
 
 const ForgotPassword = () => {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [otp, setOtp] = useState(["", "", "", ""]);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const otpRefs = [useRef(), useRef(), useRef(), useRef()];
+  const navigate = useNavigate();
+
+  const handleResendOTP = async () => {
+    setLoading(true);
+    setError("");
+    
+    try {
+      const response = await forgotPassword({ email });
+      if (response.data.message) {
+        toast.success("New OTP sent to your email!");
+        setOtp(["", "", "", ""]);
+        otpRefs[0].current?.focus(); 
+      }
+    } catch (error) {
+      setError(error.response?.data?.message || "Failed to resend OTP. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    setError("");
+    
+    try {
+      const response = await forgotPassword({ email });
+      if (response.data.message) {
+        setSuccess("OTP sent to your email address successfully!");
+        setTimeout(() => {
+          setStep(2);
+          setSuccess("");
+        }, 1000);
+      }
+    } catch (error) {
+      setError(error.response?.data?.message || "Failed to send OTP. Please try again.");
+    } finally {
       setLoading(false);
-      setStep(2);
-    }, 1500);
+    }
   };
 
   const handleOtpChange = (index, value) => {
@@ -50,25 +84,71 @@ const ForgotPassword = () => {
     }
   };
 
-  const handleOtpSubmit = (e) => {
+  const handleOtpSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    setError("");
+    
+    const otpString = otp.join("");
+    
+    if (otpString.length !== 4) {
+      setError("Please enter a valid 4-digit OTP");
       setLoading(false);
-      setStep(3);
-    }, 1500);
+      return;
+    }
+    
+    try {
+      const response = await verifyOTP({ email, otp: otpString });
+      if (response.data.message) {
+        setSuccess("OTP verified successfully!");
+        setTimeout(() => {
+          setStep(3);
+          setSuccess("");
+        }, 1000);
+      }
+    } catch (error) {
+      setError(error.response?.data?.message || "Invalid OTP. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handlePasswordSubmit = (e) => {
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
+    
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
+    
     setLoading(true);
-    setTimeout(() => {
+    
+    const otpString = otp.join("");
+    
+    try {
+      const response = await resetPassword({ 
+        email, 
+        otp: otpString, 
+        newPassword: password 
+      });
+      
+      if (response.data.message) {
+        toast.success("Password reset successfully! Please login with your new password.");
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+      }
+    } catch (error) {
+      setError(error.response?.data?.message || "Failed to reset password. Please try again.");
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   const renderStep = () => {
@@ -91,6 +171,19 @@ const ForgotPassword = () => {
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               </div>
             </div>
+
+            {error && (
+              <Alert variant="destructive" className="py-2">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {success && (
+              <Alert className="py-2 border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">{success}</AlertDescription>
+              </Alert>
+            )}
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? (
@@ -126,7 +219,23 @@ const ForgotPassword = () => {
                     />
                   ))}
               </div>
+              <p className="text-sm text-muted-foreground text-center">
+                We sent a 4-digit code to {email}
+              </p>
             </div>
+
+            {error && (
+              <Alert variant="destructive" className="py-2">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {success && (
+              <Alert className="py-2 border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">{success}</AlertDescription>
+              </Alert>
+            )}
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? (
@@ -138,6 +247,20 @@ const ForgotPassword = () => {
                 "Verify OTP"
               )}
             </Button>
+
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
+                Didn't receive the code?{" "}
+                <button
+                  type="button"
+                  onClick={handleResendOTP}
+                  disabled={loading}
+                  className="text-primary hover:underline font-medium disabled:opacity-50"
+                >
+                  Resend OTP
+                </button>
+              </p>
+            </div>
           </form>
         );
 

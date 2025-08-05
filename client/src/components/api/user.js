@@ -25,3 +25,18 @@ export async function updatePass(data) {
   const url = `auth/password`;
   return customAxios.patch(`/${url}`, data);
 }
+
+export async function forgotPassword(data) {
+  const url = "auth/forgot-password";
+  return axios.post(`${baseURL}/${url}`, data);
+}
+
+export async function verifyOTP(data) {
+  const url = "auth/verify-otp";
+  return axios.post(`${baseURL}/${url}`, data);
+}
+
+export async function resetPassword(data) {
+  const url = "auth/reset-password";
+  return axios.post(`${baseURL}/${url}`, data);
+}
