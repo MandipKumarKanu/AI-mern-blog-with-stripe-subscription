@@ -44,7 +44,7 @@ router.get('/plans', (req, res) => {
   const plans = Object.entries(PLANS).map(([key, plan]) => ({
     id: key,
     name: plan.name,
-    price: plan.amount / 100, // Convert cents to dollars
+    price: plan.amount / 100, // Convert paisa to NPR
     duration: plan.duration,
     features: plan.features,
     priceId: plan.priceId
@@ -171,7 +171,7 @@ router.post('/create-checkout-session', protect, async (req, res) => {
       userName: req.user.name,
       transactionId: session.id,
       amount: selectedPlan.amount,
-      currency: 'usd',
+      currency: 'npr',
       plan: plan,
       planName: selectedPlan.name,
       stripeSessionId: session.id,
@@ -501,7 +501,7 @@ const handleSubscriptionCancellation = async (subscription) => {
       userName: user.name,
       transactionId: `cancellation_${subscription.id}_${Date.now()}`,
       amount: 0,
-      currency: 'usd',
+      currency: 'npr',
       plan: user.subscription.plan,
       planName: PLANS[user.subscription.plan]?.name || user.subscription.plan,
       stripeSubscriptionId: subscription.id,
@@ -651,10 +651,46 @@ router.post('/cancel-subscription', protect, async (req, res) => {
       }
     );
 
+    console.log('Cancelled subscription details:', {
+      id: cancelledSubscription.id,
+      status: cancelledSubscription.status,
+      current_period_end: cancelledSubscription.current_period_end,
+      cancel_at_period_end: cancelledSubscription.cancel_at_period_end
+    });
+
     // Update user subscription status
     await User.findByIdAndUpdate(req.user._id, {
       'subscription.status': 'cancelled'
     });
+
+    // Create cancellation transaction record
+    const cancellationTransaction = new Transaction({
+      userId: user._id,
+      userEmail: user.email,
+      userName: user.name,
+      transactionId: `cancellation_${user.subscription.stripeSubscriptionId}_${Date.now()}`,
+      amount: 0,
+      currency: 'npr',
+      plan: user.subscription.plan,
+      planName: PLANS[user.subscription.plan]?.name || user.subscription.plan,
+      stripeSubscriptionId: user.subscription.stripeSubscriptionId,
+      stripeCustomerId: user.subscription.stripeCustomerId,
+      status: 'completed',
+      type: 'cancellation',
+      description: `${PLANS[user.subscription.plan]?.name || user.subscription.plan} subscription cancelled by user`,
+      metadata: new Map([
+        ['cancellationReason', 'user_requested'],
+        ['cancelledAt', new Date().toISOString()],
+        ...(cancelledSubscription.current_period_end 
+          ? [['periodEnd', new Date(cancelledSubscription.current_period_end * 1000).toISOString()]]
+          : []
+        )
+      ])
+    });
+
+    await cancellationTransaction.save();
+
+    console.log(`Manual subscription cancellation recorded for user ${user._id}`);
 
     res.json({
       success: true,
@@ -663,14 +699,25 @@ router.post('/cancel-subscription', protect, async (req, res) => {
         ...user.subscription.toObject(),
         status: 'cancelled'
       },
-      period_end: new Date(cancelledSubscription.current_period_end * 1000)
+      period_end: cancelledSubscription.current_period_end 
+        ? new Date(cancelledSubscription.current_period_end * 1000)
+        : null
     });
 
   } catch (error) {
     console.error('Error cancelling subscription:', error);
+    
+    // Provide more specific error messages
+    let errorMessage = 'Error cancelling subscription';
+    if (error.message?.includes('No such subscription')) {
+      errorMessage = 'Subscription not found. It may have already been cancelled.';
+    } else if (error.message?.includes('Invalid time value')) {
+      errorMessage = 'Error processing subscription dates. Please contact support.';
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Error cancelling subscription'
+      message: errorMessage
     });
   }
 });
