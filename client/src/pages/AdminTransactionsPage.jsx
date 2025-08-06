@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  DollarSign, 
+  Coins, 
   Users, 
   TrendingUp, 
   CreditCard,
@@ -112,14 +112,14 @@ const AdminTransactionsPage = () => {
       case 'completed': return 'bg-green-100 text-green-800 border-green-200';
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'failed': return 'bg-red-100 text-red-800 border-red-200';
-      case 'cancelled': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'cancelled': return 'bg-orange-100 text-orange-800 border-orange-200';
       case 'refunded': return 'bg-blue-100 text-blue-800 border-blue-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const formatAmount = (amount) => {
-    return `$${(amount / 100).toFixed(2)}`;
+    return `NPR ${(amount / 100).toFixed(2)}`;
   };
 
   const formatDate = (dateString) => {
@@ -130,6 +130,17 @@ const AdminTransactionsPage = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const getTypeIcon = (type) => {
+    switch (type) {
+      case 'subscription': return '🎯';
+      case 'renewal': return '🔄';
+      case 'upgrade': return '⬆️';
+      case 'cancellation': return '❌';
+      case 'refund': return '💰';
+      default: return '💳';
+    }
   };
 
   // Chart data preparation
@@ -206,7 +217,7 @@ const AdminTransactionsPage = () => {
                       {stats.revenue?.total?.count || 0} transactions
                     </p>
                   </div>
-                  <DollarSign className="h-8 w-8 text-green-500" />
+                  <Coins className="h-8 w-8 text-green-500" />
                 </div>
               </CardContent>
             </Card>
@@ -406,8 +417,8 @@ const AdminTransactionsPage = () => {
                 {transactions.map((transaction) => (
                   <div key={transaction._id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                        <CreditCard className="h-6 w-6 text-primary" />
+                      <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-lg">
+                        {getTypeIcon(transaction.type)}
                       </div>
                       <div>
                         <div className="flex items-center gap-2 mb-1">
